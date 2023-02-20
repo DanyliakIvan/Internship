@@ -25,6 +25,8 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
+//#include "retarget.c"
+#include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -50,9 +52,9 @@ TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 /* USER CODE BEGIN PV */
 uint8_t brightnessPercentage; //LED brightness (0-100)
-#define bufSize 3 //size of transmitBuf for brightness (3 characters)
-uint8_t transmitBuf[bufSize]; //
-uint8_t receiveBuf[bufSize]; //
+#define bufSize 4 //size of transmitBuf for brightness (3 characters)
+uint8_t transmitBuf[bufSize] = {'\n', '\n', '\n', '\n'}; //
+uint8_t receiveBuf[bufSize] = {'\n', '\n', '\n', '\n'}; //
 uint16_t dataFromPotentiometer = 0; //(0-4096)
 /* USER CODE END PV */
 
@@ -109,9 +111,9 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-	HAL_TIM_Base_Start_IT(&htim1);
-	HAL_TIM_Base_Start_IT(&htim2);
-	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+  HAL_TIM_Base_Start_IT(&htim1);
+  HAL_TIM_Base_Start_IT(&htim2);
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -134,23 +136,27 @@ int main(void)
 			HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
 			dataFromPotentiometer = HAL_ADC_GetValue(&hadc1);
 			
-			// converted (0-4096) -> (0-100) 
+			// converting (0-4096) -> (0-100) 
 			brightnessPercentage = map(dataFromPotentiometer, 0, 4096, 0, 100); 
 			
 			//100 -> { '1', '0', '0' }
 			digitsIntoCharArr(brightnessPercentage, countDigitsInNumber(brightnessPercentage));
 			
-			HAL_UART_Transmit(&huart2, transmitBuf, countDigitsInNumber(brightnessPercentage), 500);
+			//transmitting data to PC using UART
+			printf("%s", transmitBuf);
 		}
 		else if(switchTask == 3)
 		{
-			HAL_UART_Receive(&huart2, receiveBuf, 3, 500);
-			
-			if(receiveBuf[0] + receiveBuf[1] + receiveBuf[2] > 1)
-			{
-				brightnessPercentage = charIntoNumber();
-			}
-		}
+			//receiving data from PC using UART
+			scanf("%3c", receiveBuf);
+      
+			//checking for data availability
+      if(receiveBuf[0] + receiveBuf[1] + receiveBuf[2] > 1)
+      {
+				//{ '1', '0', '0' } -> 100
+        brightnessPercentage = charIntoNumber();
+      }
+    }
 		HAL_Delay(500);
   }
 	
@@ -203,6 +209,7 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
+//convertion a value from one range into a proportional value of another value
 uint16_t map(uint16_t data, uint16_t intMin, uint16_t intMax, uint16_t outMin, uint16_t outMax)
 {
 	return (data - intMin) * (outMax - outMin) / (intMax - intMin) + outMin; 
@@ -221,8 +228,11 @@ uint16_t countDigitsInNumber(uint16_t num)
 	return amountOfDigits;
 }
 
+//100 -> { '1', '0', '0' }
 void digitsIntoCharArr(uint16_t num, uint16_t size)
 {
+	transmitBuf[0] = transmitBuf[1] = transmitBuf[2] = transmitBuf[3] = '\n';
+	
 	if(num == 0) transmitBuf[0] = '0';
 	
 	while(num > 0)
@@ -232,6 +242,7 @@ void digitsIntoCharArr(uint16_t num, uint16_t size)
 	}
 }
 
+//{ '1', '0', '0' } -> 100
 uint16_t charIntoNumber(void)
 {
 	uint16_t number = 0;
