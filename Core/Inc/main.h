@@ -51,7 +51,7 @@ switchTask:
 	2 - brightness depends on data on A0 port; potentiometer
 	3 - brightness depends on data which is received using UART
 */
-#define switchTask 3
+#define switchTask 0
 
 /* USER CODE END EC */
 

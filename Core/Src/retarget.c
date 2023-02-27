@@ -6,17 +6,22 @@ FILE __stdout;
 /*! Standart input file stream */
 FILE __stdin; 
 
+uint8_t CARRIAGE_RETURN = 0x0D;
 
 int fputc(int ch, FILE *OStream)
 {
 	(void)OStream;
 	
-	if(ch > 32)
+	while (HAL_UART_GetState(&huart2) == HAL_UART_STATE_BUSY){};
+	if (ch == '\n')
 	{
-		while (HAL_UART_GetState(&huart2) == HAL_UART_STATE_BUSY){};
-	
-		HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart2, &CARRIAGE_RETURN, 1, HAL_MAX_DELAY);
 	}
+	
+	while (HAL_UART_GetState(&huart2) == HAL_UART_STATE_BUSY){};
+	
+	HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, HAL_MAX_DELAY);
+			
 	return ch;
 }
 
@@ -31,7 +36,6 @@ int fgetc(FILE *OStream)
 	while (HAL_UART_GetState(&huart2) == HAL_UART_STATE_BUSY){};
 	
 	HAL_UART_Receive(&huart2, (uint8_t*) &ch, 1, HAL_MAX_DELAY);
-	//HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, HAL_MAX_DELAY);
 	
 	return ch;
 }

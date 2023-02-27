@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 
+#define EEPROM_ADDR 0xA0
+
 /* USER CODE END 0 */
 
 I2C_HandleTypeDef hi2c1;
@@ -135,6 +137,24 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
   }
 }
 
+
 /* USER CODE BEGIN 1 */
 
+/*void writeInMemory(uint8_t* pData, uint16_t MemAddress)
+{
+	HAL_I2C_Mem_Write(&hi2c1, EEPROM_ADDR, 0, 2, pData, sizeof(pData) - 2, 1000);
+}*/
+
+void writeInMemory(uint8_t* pData, uint16_t MemAddress, uint16_t Size)
+{
+	HAL_I2C_Mem_Write(&hi2c1, EEPROM_ADDR, MemAddress, 2, pData, Size, 1000);
+	HAL_Delay(10);
+}
+void readFromMemory(uint8_t* pData, uint16_t MemAddress, uint16_t Size)
+{
+	HAL_I2C_Mem_Read(&hi2c1, EEPROM_ADDR, MemAddress, 2, pData, Size, 1000);
+	HAL_Delay(10);
+}
+
 /* USER CODE END 1 */
+

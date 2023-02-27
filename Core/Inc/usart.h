@@ -42,6 +42,8 @@ void MX_USART2_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef* huart2);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

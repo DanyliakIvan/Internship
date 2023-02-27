@@ -25,7 +25,6 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
-//#include "retarget.c"
 #include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
@@ -53,17 +52,18 @@ TIM_HandleTypeDef htim2;
 /* USER CODE BEGIN PV */
 uint8_t brightnessPercentage; //LED brightness (0-100)
 #define bufSize 4 //size of transmitBuf for brightness (3 characters)
-uint8_t transmitBuf[bufSize] = {'\n', '\n', '\n', '\n'}; //
-uint8_t receiveBuf[bufSize] = {'\n', '\n', '\n', '\n'}; //
+uint8_t receiveBuf[bufSize]; //
 uint16_t dataFromPotentiometer = 0; //(0-4096)
+uint16_t previosState = 1600;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 uint16_t map(uint16_t, uint16_t, uint16_t, uint16_t, uint16_t);
-uint16_t countDigitsInNumber(uint16_t);
-void digitsIntoCharArr(uint16_t, uint16_t);
 uint16_t charIntoNumber(void);
+void receiveBrightnessFromPotentiometer();
+void receiveBrightnessFromPC();
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -78,7 +78,8 @@ uint16_t charIntoNumber(void);
   * @retval int
   */
 	
-	
+
+
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -119,46 +120,80 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	
+	printf("%s", "Hello, Siemens!\n\n");
+	
+	/* START TEST I2C */
+	
+	#if 0
+	uint8_t testStringWrite[] = "Danyliak"; //"Hello, World! From Danyliak)";
+	uint8_t testStringRead[20];
+
+	writeInMemory(testStringWrite, 0, 4);
+	writeInMemory(testStringWrite + 4, 4, 4);
+	readFromMemory(testStringRead, 0, 8);
+	
+	printf("%s - written\n%s - read\n", testStringWrite, testStringRead);
+	#endif
+	/* END TEST I2C */
+	
+	
+	/* START TEST SPI */	
+	#if 0
+	
+	HAL_Delay(100);
+	uint16_t x, y, z;;
+	
+	adxlInit();
+	
+	
+	
+	while(1)
+	{
+		uint8_t adxlData[6];
+		adxlRead(0x32, adxlData);
+		adxlRead(0x33, adxlData + 1);
+		adxlRead(0x34, adxlData + 2);
+		adxlRead(0x35, adxlData + 3);
+		adxlRead(0x36, adxlData + 4);
+		adxlRead(0x37, adxlData + 5);
+		
+		HAL_Delay(100);
+		x = ((adxlData[1] << 8) | adxlData[0]);
+		y = ((adxlData[3] << 8) | adxlData[2]);
+		z = ((adxlData[5] << 8) | adxlData[4]);
+		
+		x = x * 0.0078;
+		y = y * 0.0078;
+		z = z * 0.0078;
+		
+		printf("x = %d, y = %d, z = %d\n", x, y, z);
+		HAL_Delay(1000);
+		
+	}
+	
+	#endif
+	/* END TEST SPI */
+	
+	char testReceive = 100;
 	
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		
-		//toggleLed(); //toggle state of LED using button
-		
+				
 		
 		if(switchTask == 2)
 		{
-			//receiving data from PC using UART
-			HAL_ADC_Start(&hadc1);
-			HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-			dataFromPotentiometer = HAL_ADC_GetValue(&hadc1);
-			
-			// converting (0-4096) -> (0-100) 
-			brightnessPercentage = map(dataFromPotentiometer, 0, 4096, 0, 100); 
-			
-			//100 -> { '1', '0', '0' }
-			digitsIntoCharArr(brightnessPercentage, countDigitsInNumber(brightnessPercentage));
-			
-			//transmitting data to PC using UART
-			printf("%s", transmitBuf);
+			receiveBrightnessFromPotentiometer();
 		}
 		else if(switchTask == 3)
 		{
-			//receiving data from PC using UART
-			scanf("%3c", receiveBuf);
-      
-			//checking for data availability
-      if(receiveBuf[0] + receiveBuf[1] + receiveBuf[2] > 1)
-      {
-				//{ '1', '0', '0' } -> 100
-        brightnessPercentage = charIntoNumber();
-      }
+			receiveBrightnessFromPC();
     }
-		HAL_Delay(500);
+		HAL_Delay(100);
   }
+	
 	
   /* USER CODE END 3 */
 }
@@ -215,59 +250,51 @@ uint16_t map(uint16_t data, uint16_t intMin, uint16_t intMax, uint16_t outMin, u
 	return (data - intMin) * (outMax - outMin) / (intMax - intMin) + outMin; 
 }
 
-uint16_t countDigitsInNumber(uint16_t num)
-{
-  uint16_t amountOfDigits = 1;
-
-	while(num >= 10)
-	{
-		amountOfDigits++;
-		num /= 10;
-	}
-	
-	return amountOfDigits;
-}
-
-//100 -> { '1', '0', '0' }
-void digitsIntoCharArr(uint16_t num, uint16_t size)
-{
-	transmitBuf[0] = transmitBuf[1] = transmitBuf[2] = transmitBuf[3] = '\n';
-	
-	if(num == 0) transmitBuf[0] = '0';
-	
-	while(num > 0)
-	{
-		transmitBuf[--size] = (num % 10) + '0';
-		num /= 10;
-	}
-}
-
 //{ '1', '0', '0' } -> 100
 uint16_t charIntoNumber(void)
 {
 	uint16_t number = 0;
-	uint8_t counter = 3;
 	
-	uint8_t X = 100;
+	number = (receiveBuf[0] - '0') * 100 + (receiveBuf[1] - '0') * 10 + (receiveBuf[2] - '0');
 	
-	for (uint8_t i = 0; i < counter; i++)
-	{
-		if (receiveBuf[i] != 0)
-		{
-			while(i < counter)
-			{
-				number += ((receiveBuf[i] >= 48) ? (receiveBuf[i] - '0') : (receiveBuf[i])) * X;
-				i++;
-				X /= 10;
-			}
-		}
-		else X /= 10;
-	}
-	
-	receiveBuf[0] = receiveBuf[1] = receiveBuf[2] = 0;
+	receiveBuf[0] = receiveBuf[1] = receiveBuf[2] = receiveBuf[3] = '\0';
 	
 	return number;
 }
+
+void receiveBrightnessFromPotentiometer()
+{
+	//receiving data from PC using UART
+	HAL_ADC_Start(&hadc1);
+	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+	dataFromPotentiometer = HAL_ADC_GetValue(&hadc1);
+
+	// converting (0-4096) -> (0-100) 
+	brightnessPercentage = map(dataFromPotentiometer, 0, 4096, 0, 100); 
+
+	if(previosState != brightnessPercentage) //print only when there're changes
+	{
+		//transmitting data to PC using UART
+		printf("Duty cycle = %d\n", previosState = brightnessPercentage);
+	}
+}
+
+void receiveBrightnessFromPC()
+{
+	//receiving data from PC using UART (3 "digits")
+	for (uint8_t i = 0; i < 3; i++)
+	{
+		receiveBuf[i] = getchar();
+	}
+	
+	//checking for data availability
+	if(receiveBuf[0] + receiveBuf[1] + receiveBuf[2] > 1)
+	{
+		//{ '1', '0', '0' } -> 100
+		printf("Duty cycle = %d\n", brightnessPercentage = charIntoNumber());
+	}
+}
+
 
 /* USER CODE END 4 */
 
