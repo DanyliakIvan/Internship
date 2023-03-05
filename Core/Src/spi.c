@@ -42,8 +42,8 @@ void MX_SPI1_Init(void)
   hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES;
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
-  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
+  hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
   hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
@@ -119,34 +119,5 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
 
 
 /* USER CODE BEGIN 1 */
-
-void adxlInit(void)
-{
-	adxlWrite(0x2E, 0x80);  // reset all bits
-	adxlWrite(0x2d, 0x08);  // power_cntl measure and wake up 8hz
-	adxlWrite(0x31, 0x0B);  // data_format range= +- 4g
-	HAL_Delay(500);
-}
-
-void adxlWrite(uint8_t address, uint8_t value)
-{
-	uint8_t data[2];
-	data[0] = address | 0x40;  // multibyte write
-	data[1] = value;
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);  // pull the cs pin low
-	HAL_SPI_Transmit(&hspi1, data, 2, 100);  // write data to register
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);  // pull the cs pin high
-}
-
-void adxlRead(uint8_t address, uint8_t* adxlData)
-{
-	address |= 0x80;  // read operation
-	//address |= 0x40;  // multibyte read
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);  // pull the pin low
-	HAL_SPI_Transmit(&hspi1, &address, 1, 100);  // send address
-	HAL_SPI_Receive(&hspi1, adxlData, 1, 100);  // receive 6 bytes data
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);  // pull the pin high
-}
-
 
 /* USER CODE END 1 */

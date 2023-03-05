@@ -131,9 +131,4 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 
 /* USER CODE BEGIN 1 */
 
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef* huart2)
-{
-	uint8_t mas[] = "DONE!";
-	HAL_UART_Transmit(huart2, mas, 5, 1000);
-}
 /* USER CODE END 1 */

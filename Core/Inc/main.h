@@ -41,9 +41,7 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-#define PWN_DUTY_MAX 100
-#define PWN_DUTY_MIN 0
-#define PWN_DUTY_STEP 1
+
 /*
 switchTask:
 	0 - do nothing

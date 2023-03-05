@@ -148,12 +148,12 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
 void writeInMemory(uint8_t* pData, uint16_t MemAddress, uint16_t Size)
 {
 	HAL_I2C_Mem_Write(&hi2c1, EEPROM_ADDR, MemAddress, 2, pData, Size, 1000);
-	HAL_Delay(10);
+	while (HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY) {}
 }
 void readFromMemory(uint8_t* pData, uint16_t MemAddress, uint16_t Size)
 {
 	HAL_I2C_Mem_Read(&hi2c1, EEPROM_ADDR, MemAddress, 2, pData, Size, 1000);
-	HAL_Delay(10);
+	while (HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY) {}
 }
 
 /* USER CODE END 1 */

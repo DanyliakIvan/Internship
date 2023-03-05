@@ -25,6 +25,9 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
+#include "oled.h"
+#include "adxl.h"
+#include "terminal.h"
 #include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
@@ -78,8 +81,6 @@ void receiveBrightnessFromPC();
   * @retval int
   */
 	
-
-
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -115,66 +116,47 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim1);
   HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+	adxlInit();
+	oledInit();
   /* USER CODE END 2 */
 
   /* Infinite loop */
+	
   /* USER CODE BEGIN WHILE */
 	
-	printf("%s", "Hello, Siemens!\n\n");
-	
-	/* START TEST I2C */
-	
-	#if 0
-	uint8_t testStringWrite[] = "Danyliak"; //"Hello, World! From Danyliak)";
-	uint8_t testStringRead[20];
+	printf("%s", "Hello!\n\n");
 
-	writeInMemory(testStringWrite, 0, 4);
-	writeInMemory(testStringWrite + 4, 4, 4);
-	readFromMemory(testStringRead, 0, 8);
-	
-	printf("%s - written\n%s - read\n", testStringWrite, testStringRead);
-	#endif
-	/* END TEST I2C */
-	
 	
 	/* START TEST SPI */	
 	#if 0
 	
-	HAL_Delay(100);
-	uint16_t x, y, z;;
+	//HAL_Delay(100);
+	uint8_t x, y, z;
 	
 	adxlInit();
 	
-	
+	oledInit();
 	
 	while(1)
 	{
-		uint8_t adxlData[6];
-		adxlRead(0x32, adxlData);
-		adxlRead(0x33, adxlData + 1);
-		adxlRead(0x34, adxlData + 2);
-		adxlRead(0x35, adxlData + 3);
-		adxlRead(0x36, adxlData + 4);
-		adxlRead(0x37, adxlData + 5);
-		
-		HAL_Delay(100);
-		x = ((adxlData[1] << 8) | adxlData[0]);
-		y = ((adxlData[3] << 8) | adxlData[2]);
-		z = ((adxlData[5] << 8) | adxlData[4]);
-		
-		x = x * 0.0078;
-		y = y * 0.0078;
-		z = z * 0.0078;
-		
-		printf("x = %d, y = %d, z = %d\n", x, y, z);
-		HAL_Delay(1000);
-		
+		adxlReadAndOutInTerm();
+		adxlReadAndOutOnScreen();
 	}
 	
 	#endif
 	/* END TEST SPI */
+
+
+	/* START TEST TERMINAL */	
 	
-	char testReceive = 100;
+	while(1)
+	{
+		checkCommand();
+		for (int i = 0; i < 1000; i++)
+		{}
+	}
+	
+	/* END TEST TERMINAL */
 	
   while (1)
   {
@@ -191,7 +173,7 @@ int main(void)
 		{
 			receiveBrightnessFromPC();
     }
-		HAL_Delay(100);
+		//HAL_Delay(100);
   }
 	
 	
@@ -281,10 +263,17 @@ void receiveBrightnessFromPotentiometer()
 
 void receiveBrightnessFromPC()
 {
+	int8_t x;
+	
 	//receiving data from PC using UART (3 "digits")
 	for (uint8_t i = 0; i < 3; i++)
 	{
-		receiveBuf[i] = getchar();
+		x = getchar();
+		
+		if (x == EOF)
+			return;
+		
+		receiveBuf[i] = x;
 	}
 	
 	//checking for data availability

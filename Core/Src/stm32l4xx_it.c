@@ -32,7 +32,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define PWN_DUTY_MAX 100
+#define PWN_DUTY_MIN 0
+#define PWN_DUTY_STEP 1
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/

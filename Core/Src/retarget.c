@@ -29,13 +29,13 @@ int fgetc(FILE *OStream)
 {
 	(void)OStream;
 	
-	int ch;
+	int ch = EOF;
 	
-  __HAL_UART_CLEAR_OREFLAG(&huart2);
+  //__HAL_UART_CLEAR_OREFLAG(&huart2);
 	
 	while (HAL_UART_GetState(&huart2) == HAL_UART_STATE_BUSY){};
 	
-	HAL_UART_Receive(&huart2, (uint8_t*) &ch, 1, HAL_MAX_DELAY);
-	
+	HAL_UART_Receive(&huart2, (uint8_t*) &ch, 1, 100);
+		
 	return ch;
 }
