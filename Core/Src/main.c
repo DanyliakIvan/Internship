@@ -54,18 +54,14 @@ TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 /* USER CODE BEGIN PV */
 uint8_t brightnessPercentage; //LED brightness (0-100)
-#define bufSize 4 //size of transmitBuf for brightness (3 characters)
-uint8_t receiveBuf[bufSize]; //
-uint16_t dataFromPotentiometer = 0; //(0-4096)
 uint16_t previosState = 1600;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 uint16_t map(uint16_t, uint16_t, uint16_t, uint16_t, uint16_t);
-uint16_t charIntoNumber(void);
-void receiveBrightnessFromPotentiometer();
-void receiveBrightnessFromPC();
+uint16_t charIntoNumber(uint8_t* receiveBuf);
+
 
 /* USER CODE BEGIN PFP */
 
@@ -92,9 +88,6 @@ int main(void)
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
@@ -112,70 +105,36 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
-  /* USER CODE BEGIN 2 */
+	
   HAL_TIM_Base_Start_IT(&htim1);
   HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-	adxlInit();
+
+	
+  /* USER CODE BEGIN Init */
+	adxlInit();	
 	oledInit();
+  /* USER CODE END Init */
+	
+	
+  /* USER CODE BEGIN 2 */
+	printf("%s", "Hello!\n\n");
   /* USER CODE END 2 */
+
 
   /* Infinite loop */
 	
   /* USER CODE BEGIN WHILE */
 	
-	printf("%s", "Hello!\n\n");
 
-	
-	/* START TEST SPI */	
-	#if 0
-	
-	//HAL_Delay(100);
-	uint8_t x, y, z;
-	
-	adxlInit();
-	
-	oledInit();
-	
-	while(1)
-	{
-		adxlReadAndOutInTerm();
-		adxlReadAndOutOnScreen();
-	}
-	
-	#endif
-	/* END TEST SPI */
-
-
-	/* START TEST TERMINAL */	
-	
-	while(1)
-	{
-		checkCommand();
-		for (int i = 0; i < 1000; i++)
-		{}
-	}
-	
-	/* END TEST TERMINAL */
-	
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 				
-		
-		if(switchTask == 2)
-		{
-			receiveBrightnessFromPotentiometer();
-		}
-		else if(switchTask == 3)
-		{
-			receiveBrightnessFromPC();
-    }
-		//HAL_Delay(100);
+		checkCommand();
   }
-	
 	
   /* USER CODE END 3 */
 }
@@ -233,7 +192,7 @@ uint16_t map(uint16_t data, uint16_t intMin, uint16_t intMax, uint16_t outMin, u
 }
 
 //{ '1', '0', '0' } -> 100
-uint16_t charIntoNumber(void)
+uint16_t charIntoNumber(uint8_t* receiveBuf)
 {
 	uint16_t number = 0;
 	
@@ -244,8 +203,9 @@ uint16_t charIntoNumber(void)
 	return number;
 }
 
-void receiveBrightnessFromPotentiometer()
+void receiveBrightnessFromPotentiometer(char ** tokensArr)
 {
+	uint16_t dataFromPotentiometer = 0; //(0-4096)
 	//receiving data from PC using UART
 	HAL_ADC_Start(&hadc1);
 	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
@@ -261,26 +221,23 @@ void receiveBrightnessFromPotentiometer()
 	}
 }
 
-void receiveBrightnessFromPC()
+void receiveBrightnessFromPC(char ** tokensArr)
 {
 	int8_t x;
+	uint8_t receiveBuf[4];
 	
 	//receiving data from PC using UART (3 "digits")
 	for (uint8_t i = 0; i < 3; i++)
 	{
-		x = getchar();
-		
-		if (x == EOF)
-			return;
-		
-		receiveBuf[i] = x;
+		memcpy(receiveBuf, tokensArr[1], 3);
+		//receiveBuf[i] = tokensArr[1][i];
 	}
 	
 	//checking for data availability
 	if(receiveBuf[0] + receiveBuf[1] + receiveBuf[2] > 1)
 	{
 		//{ '1', '0', '0' } -> 100
-		printf("Duty cycle = %d\n", brightnessPercentage = charIntoNumber());
+		printf("Duty cycle = %d\n", brightnessPercentage = charIntoNumber(receiveBuf));
 	}
 }
 

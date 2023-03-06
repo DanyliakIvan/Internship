@@ -60,7 +60,8 @@ switchTask:
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
-
+void receiveBrightnessFromPotentiometer(char ** tokensArr);
+void receiveBrightnessFromPC(char ** tokensArr);
 
 /* USER CODE BEGIN EFP */
 

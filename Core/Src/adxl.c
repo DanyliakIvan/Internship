@@ -29,7 +29,7 @@ void adxlRead(uint8_t* adxlData)
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);  // pull the pin high
 }
 
-void adxlReadAndOutInTerm(void)
+void adxlReadAndOutToPC(char ** tokensArr)
 {
 	uint8_t x, y, z;
 	uint8_t adxlData[6];
@@ -42,11 +42,9 @@ void adxlReadAndOutInTerm(void)
 	
 	//print x, y and z in terminal
 	printf("Tx = %d, y = %d, z = %d\n", x, y, z);
-	
-	//HAL_Delay(500);
 }
 
-void adxlReadAndOutOnScreen(void)
+void adxlReadAndOutOnDisplay(char ** tokensArr)
 {
 	uint8_t x, y, z;
 	uint8_t adxlData[6];
@@ -87,6 +85,4 @@ void adxlReadAndOutOnScreen(void)
 	oledSetCursor(0, 20);
 	oledWriteString(arr + 18, white);
 	oledUpdateScreen();
-		
-	//HAL_Delay(500);
 }

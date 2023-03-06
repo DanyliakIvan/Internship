@@ -13,7 +13,7 @@
 void adxlInit(void);
 void adxlWrite(uint8_t address, uint8_t value);
 void adxlRead(uint8_t* adxlData);
-void adxlReadAndOutInTerm(void);
-void adxlReadAndOutOnScreen(void);
+void adxlReadAndOutToPC(char ** tokensArr);
+void adxlReadAndOutOnDisplay(char ** tokensArr);
 
 #endif /* __ADXL_H__ */
