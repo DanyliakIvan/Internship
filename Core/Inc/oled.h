@@ -6,6 +6,8 @@
 #define __OLED_H__
 
 #include "main.h"
+#include "i2c.h"
+#include "terminal.h"
 
 
 static const uint16_t font6x8 [] = {

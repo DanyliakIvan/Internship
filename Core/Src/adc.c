@@ -148,5 +148,10 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 }
 
 /* USER CODE BEGIN 1 */
-
+uint16_t readDataFromPotentiometer(void)
+{
+    HAL_ADC_Start(&hadc1);
+    HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+    return HAL_ADC_GetValue(&hadc1);
+}
 /* USER CODE END 1 */

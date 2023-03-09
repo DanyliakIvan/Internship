@@ -42,15 +42,6 @@ extern "C" {
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
 
-/*
-switchTask:
-	0 - do nothing
-	1 - brightness is increasing from min to max every 5s
-	2 - brightness depends on data on A0 port; potentiometer
-	3 - brightness depends on data which is received using UART
-*/
-#define switchTask 0
-
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
@@ -62,14 +53,23 @@ switchTask:
 void Error_Handler(void);
 void receiveBrightnessFromPotentiometer(char ** tokensArr);
 void receiveBrightnessFromPC(char ** tokensArr);
+void ledTerminalInit();
 
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */
 
+
 /* Private defines -----------------------------------------------------------*/
 
 /* USER CODE BEGIN Private defines */
+
+//defines for working with brightness using PWN
+#define PWN_DUTY_MAX 100
+#define PWN_DUTY_MIN 0
+#define PWN_DUTY_STEP 1
+
+#define MAX_BUF_SIZE 128
 
 /* USER CODE END Private defines */
 

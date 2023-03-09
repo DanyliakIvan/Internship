@@ -32,9 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define PWN_DUTY_MAX 100
-#define PWN_DUTY_MIN 0
-#define PWN_DUTY_STEP 1
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -208,20 +206,20 @@ void SysTick_Handler(void)
 void TIM1_UP_TIM16_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_UP_TIM16_IRQn 0 */
-	
-	//brightness is increasing from min to max every 5s
-	if(switchTask == 1)
-	{
-		if(brightnessPercentage >= PWN_DUTY_MAX) //100
-		{
-			brightnessPercentage = PWN_DUTY_MIN; //0
-		}
-		else
-		{
-			brightnessPercentage += PWN_DUTY_STEP; //1
-		}
-	}
-	
+    
+    //brightness is increasing from min to max every 5s
+    if(0)
+    {
+        if(brightnessPercentage >= PWN_DUTY_MAX) //100
+        {
+            brightnessPercentage = PWN_DUTY_MIN; //0
+        }
+        else
+        {
+            brightnessPercentage += PWN_DUTY_STEP; //1
+        }
+    }
+    
   /* USER CODE END TIM1_UP_TIM16_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_UP_TIM16_IRQn 1 */
@@ -235,7 +233,7 @@ void TIM1_UP_TIM16_IRQHandler(void)
 void TIM2_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM2_IRQn 0 */
-	TIM2->CCR2 = (htim2.Init.Period * brightnessPercentage) / 100u; 
+    TIM2->CCR2 = (htim2.Init.Period * brightnessPercentage) / 100u; 
   /* USER CODE END TIM2_IRQn 0 */
   HAL_TIM_IRQHandler(&htim2);
   /* USER CODE BEGIN TIM2_IRQn 1 */
