@@ -1,5 +1,11 @@
 #include "adxl.h"
 
+//struct for x y z
+positionOfAdxl position;
+
+//private prototypes
+void adxlCheckForTiming(char ** tokensArr);
+
 
 void adxlInit(void)
 {
@@ -42,49 +48,45 @@ void adxlReadAndOutToPC(char ** tokensArr)
     
     //print x, y and z in terminal
     printf("Tx = %d, y = %d, z = %d\n", x, y, z);
+    
+    adxlCheckForTiming(tokensArr);
 }
 
 void adxlReadAndOutOnDisplay(char ** tokensArr)
 {
-    uint8_t x, y, z;
     uint8_t adxlData[6];
-    char arr[] =  "x = 000\0 y = 000\0 z = 000";
     
+    char templateForPrintOnScreen[10];
+   
     //read data from accelerometer
     adxlRead(adxlData);
     
     //left-shift data
-    x = ((adxlData[1] << 8) | adxlData[0]);
-    y = ((adxlData[3] << 8) | adxlData[2]);
-    z = ((adxlData[5] << 8) | adxlData[4]);
+    position.x = ((adxlData[1] << 8) | adxlData[0]);
+    position.y = ((adxlData[3] << 8) | adxlData[2]);
+    position.z = ((adxlData[5] << 8) | adxlData[4]);
 
-    //replace 000 in string to figures from data
-    arr[4] = (x / 100) + 48; 
-    x -= (x / 100)*100;
-    arr[5] = (x / 10) + 48;  
-    x -= (x / 10)*10;
-    arr[6] = x + 48;  
     
-    arr[13] = (y / 100 + 48); 
-    y -= (y / 100)*100;
-    arr[14] = (y / 10) + 48; 
-    y -= (y / 10)*10;
-    arr[15] = y + 48; 
+    //turn off all of the pixels
+    oledFill(black);
     
-    arr[22] = (z / 100) + 48; 
-    z -= (z / 100)*100;
-    arr[23] = (z / 10) + 48; 
-    z -= (z / 10)*10;
-    arr[24] = z + 48; 
+    //concatenate in format (x = ***) and print
+    //x
+    sprintf(templateForPrintOnScreen, "%c = %d\n", 'x', position.x);
+    oledWriteString(templateForPrintOnScreen, white);
     
-    //print x, y and z  on screen
-    oledSetCursor(0, 0);
-    oledWriteString(arr, white);
-    oledSetCursor(0, 10);
-    oledWriteString(arr + 9, white);
-    oledSetCursor(0, 20);
-    oledWriteString(arr + 18, white);
+    //y
+    sprintf(templateForPrintOnScreen, "%c = %d\n", 'y', position.y);
+    oledWriteString(templateForPrintOnScreen, white);
+    
+    //z
+    sprintf(templateForPrintOnScreen, "%c = %d\n", 'z', position.z);
+    oledWriteString(templateForPrintOnScreen, white);
+    
+    //refresh the screen
     oledUpdateScreen();
+    
+    adxlCheckForTiming(tokensArr);
 }
 
 void adxlTerminalInit(void)
@@ -93,7 +95,7 @@ void adxlTerminalInit(void)
     {
         .name = "adxlPC",
         .desc = "reads data from ADXL345 and sends this data to the terminal",
-        .test_ptr = adxlReadAndOutToPC,
+        .funcPtr = adxlReadAndOutToPC,
         .next = NULL
     };
     terminalListAddItem(&dataFromADXL345PCItem);
@@ -102,8 +104,55 @@ void adxlTerminalInit(void)
     {
         .name = "adxlDisplay",
         .desc = "reads data from ADXL345 and sends this data to the oled",
-        .test_ptr = adxlReadAndOutOnDisplay,
+        .funcPtr = adxlReadAndOutOnDisplay,
         .next = NULL
     };
     terminalListAddItem(&dataFromADXL345DisplayItem);
 }
+
+void adxlCheckForTiming(char ** tokensArr)
+{
+    //creat new element of the structure
+    static timingList dataFromADXLToPCItem;
+    static timingList dataFromADXLToDisplayItem;
+    
+    //check whether there's number in second element
+    if (atoi(tokensArr[1]))
+    {
+        if (!strcmp(tokensArr[0], "adxlPC"))
+        {
+            dataFromADXLToPCItem.timeout = atoi(tokensArr[1]);
+            dataFromADXLToPCItem.counter = 0;
+            dataFromADXLToPCItem.next = NULL;
+            
+            dataFromADXLToPCItem.funcPtr = adxlReadAndOutToPC;
+            
+            timingAddItem(&dataFromADXLToPCItem);
+        }
+        else if (!strcmp(tokensArr[0], "adxlDisplay"))
+        {
+            dataFromADXLToDisplayItem.timeout = atoi(tokensArr[1]);
+            dataFromADXLToDisplayItem.counter = 0;
+            dataFromADXLToDisplayItem.next = NULL;
+            
+            dataFromADXLToDisplayItem.funcPtr = adxlReadAndOutOnDisplay;
+            
+            timingAddItem(&dataFromADXLToDisplayItem);
+        }
+    }
+    else if (!strcmp(tokensArr[1], "stop"))
+    {
+        if (!strcmp(tokensArr[0], "adxlPC"))
+        {
+            printf("adxlPC stop\n");
+            timingDeleteItem(dataFromADXLToPCItem.id);            
+        }
+        else if (!strcmp(tokensArr[0], "adxlDisplay"))
+        {
+            printf("adxlDisplay stop\n");
+            timingDeleteItem(dataFromADXLToDisplayItem.id); 
+        }
+    }
+}
+
+

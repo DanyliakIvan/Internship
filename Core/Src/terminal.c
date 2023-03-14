@@ -1,17 +1,16 @@
 #include "terminal.h"
 
 
-//head point to the begin of the list
-terminalList* head = NULL;
+//points to the begin of the list
+terminalList* terminalHead = NULL;
 
 //private function prototypes
 void bufIntoTokens(char* buf);
 void lookForCommand(char ** tokensArr);
-void funcsInit();
+void terminalFuncsInit();
 void terminalCommandNames(char ** tokensArr);
 
 void add(char ** tokensArr);
-
 
 
 
@@ -21,8 +20,7 @@ void terminalCheckCommand(void)
     static char buf[MAX_BUF_SIZE];
     static uint8_t counter = 0;
     
-    int8_t ch = EOF; //getchar();
-    HAL_UART_Receive(&huart2, (uint8_t*) &ch, 1, HAL_MAX_DELAY);
+    int8_t ch = getchar();
     
     //if queue is empty -> return
     if (ch == EOF)
@@ -34,6 +32,8 @@ void terminalCheckCommand(void)
     {
         buf[counter++] = '\0';
         counter = 0;
+        
+        printf("command = %s\n", buf);
         bufIntoTokens(buf);
     }
     //write reveiced character in the buf
@@ -71,16 +71,16 @@ void bufIntoTokens(char* buf)
 void lookForCommand(char ** tokensArr)
 {
     //fill in the list (only on first start)
-    funcsInit();
+    terminalFuncsInit();
     
-    terminalList* current = head;
+    terminalList* current = terminalHead;
 
     //look for a command and call func
     while (current != NULL)
     {
         if(!strcmp(tokensArr[0], current->name))
-        {
-            (*current->test_ptr)(tokensArr);
+        {            
+            (*current->funcPtr)(tokensArr);
             return;
         }
         else
@@ -90,22 +90,23 @@ void lookForCommand(char ** tokensArr)
     }
     
     //if the command was not found
-    printf("command not found\n");
+    printf("command not found = %s\n", tokensArr[0]);
 }
 
 
-void funcsInit()
+void terminalFuncsInit()
 {
     //check for functions
-    if (head != NULL)
+    if (terminalHead != NULL)
     {
         return;
     }
     
     
     //item from other files
-    adxlTerminalInit();
     ledTerminalInit();
+    adxlTerminalInit();
+    oledTerminalInit();
     
     
     //add other item
@@ -113,7 +114,7 @@ void funcsInit()
     {
         .name = "add",
         .desc = "adds two one-figure numbers",
-        .test_ptr = add,
+        .funcPtr = add,
         .next = NULL
     };
     terminalListAddItem(&addItem);
@@ -122,7 +123,7 @@ void funcsInit()
     {
         .name = "help",
         .desc = "prints all of availabe commands",
-        .test_ptr = terminalCommandNames,
+        .funcPtr = terminalCommandNames,
         .next = NULL
     };
     terminalListAddItem(&helpItem);
@@ -132,13 +133,13 @@ void funcsInit()
 void terminalListAddItem(terminalList* newItem)
 {
     //add first element
-    if (head == NULL)
+    if (terminalHead == NULL)
     {    
-        head = newItem;
+        terminalHead = newItem;
         return;
     }
     
-    terminalList* current = head;
+    terminalList* current = terminalHead;
     
     //search the end of the list
     while (current->next != NULL)
@@ -161,7 +162,7 @@ void add(char ** tokensArr)
 //print all of commands and their descriptions
 void terminalCommandNames(char ** tokensArr)
 {
-    terminalList* current = head;
+    terminalList* current = terminalHead;
     
     while (current != NULL)
     {

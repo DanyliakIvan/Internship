@@ -7,17 +7,18 @@
 
 #include "usart.h"
 #include "adxl.h"
+#include "oled.h"
 #include "main.h"
-
+#include "timing.h"
 
 
 //structure for funcs which are added to linked list
-typedef struct list
+typedef struct termList
 {
     char* name; //command name
     char* desc; //description of what a function do
-    void (*test_ptr)(char **); //pointer to a function
-    struct list* next; //pointer to next element of the list
+    void (*funcPtr)(char **); //pointer to a function
+    struct termList* next; //pointer to next element of the list
 } terminalList;
 
 

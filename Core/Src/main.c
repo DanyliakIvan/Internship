@@ -28,6 +28,7 @@
 #include "oled.h"
 #include "adxl.h"
 #include "terminal.h"
+#include "timing.h"
 #include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
@@ -74,7 +75,8 @@ inline uint16_t map(uint16_t, uint16_t, uint16_t, uint16_t, uint16_t);
   * @brief  The application entry point.
   * @retval int
   */
-    
+  
+
 int main(void)
 {
     /* USER CODE BEGIN 1 */
@@ -112,11 +114,12 @@ int main(void)
     /* USER CODE BEGIN Init */
     adxlInit();    
     oledInit();
+    //timingInit();
     /* USER CODE END Init */
 
 
     /* USER CODE BEGIN 2 */
-    printf("%s", "Hello!\n\n");
+    printf("Hello!\n\n");
     /* USER CODE END 2 */
 
 
@@ -124,13 +127,14 @@ int main(void)
 
     /* USER CODE BEGIN WHILE */
 
-
+    
     while (1)
     {
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-                
+               
+        timingCheckPeriods();
         terminalCheckCommand();
     }
     
@@ -203,6 +207,9 @@ void receiveBrightnessFromPotentiometer(char ** tokensArr) //A0 port
         //transmit data to PC using UART
         printf("Duty cycle = %d\n", previuosState = brightnessPercentage);
     }
+    
+    //check whether there's command for timing
+    ledCheckForTiming(tokensArr);
 }
 
 void receiveBrightnessFromPC(char ** tokensArr)
@@ -226,7 +233,7 @@ void ledTerminalInit()
     {
         .name = "ledReadFromPot",
         .desc = "reads data from potentiometer and sets this value on the led",
-        .test_ptr = receiveBrightnessFromPotentiometer,
+        .funcPtr = receiveBrightnessFromPotentiometer,
         .next = NULL
     };
     terminalListAddItem(&dataFromPotentiometerItem);
@@ -235,10 +242,38 @@ void ledTerminalInit()
     {
         .name = "ledReadFromPC",
         .desc = "reads data from terminal and sets this value on the led",
-        .test_ptr = receiveBrightnessFromPC,
+        .funcPtr = receiveBrightnessFromPC,
         .next = NULL
     };
     terminalListAddItem(&dataFromUARTItem);
+}
+
+
+void ledCheckForTiming(char ** tokensArr)
+{
+    //creat new element and add it to the list
+    static timingList dataFromPotentiometerItem =
+    {
+        //.timeout = 1000, //atoi(tokensArr[1])
+        .counter = 0,
+        .funcPtr = receiveBrightnessFromPotentiometer,
+        .next = NULL
+    };
+    
+    //check whether there's number in second element
+    if (atoi(tokensArr[1]))
+    {
+      
+        //add timeout
+        dataFromPotentiometerItem.timeout = atoi(tokensArr[1]);
+        
+        timingAddItem(&dataFromPotentiometerItem);
+    }
+    else if (!strcmp(tokensArr[1], "stop"))
+    {
+        printf("ledReadFromPot stop\n");
+        timingDeleteItem(dataFromPotentiometerItem.id);
+    }
 }
 
 /* USER CODE END 4 */

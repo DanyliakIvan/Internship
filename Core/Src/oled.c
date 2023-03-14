@@ -1,6 +1,8 @@
 #include "oled.h"
 
 
+//pricate function prototypes
+void oledWriteStringFromPC(char** tokensArr);
 
 fontDef font_6x8 = {6,8,font6x8};
 
@@ -64,14 +66,18 @@ void oledInit(void)
     oledUpdateScreen();
 
     // Set default values for screen object
-    OLED.currentX = 0;
-    OLED.currentY = 0;
-    OLED.initialized = 1;
+    oled.currentX = 0;
+    oled.currentY = 0;
+    oled.initialized = 1;
     
 }
 
-void oledFill(OLED_COLOR color) 
+void oledFill(oledColor color) 
 {
+    //set curson in the corner of the display
+    oled.currentX = 0;
+    oled.currentY = 0;
+    
     for (uint32_t i = 0; i < sizeof(oledBuffer); i++) 
     {
         oledBuffer[i] = (color == black) ? 0x00 : 0xFF;
@@ -97,7 +103,7 @@ void oledUpdateScreen(void)
  * Y => Y Coordinate
  * color => Pixel color
  */
-void oledDrawPixel(uint8_t x, uint8_t y, OLED_COLOR color)
+void oledDrawPixel(uint8_t x, uint8_t y, oledColor color)
 {
     if (y >= OLED_WIDTH || x >= OLED_WIDTH) 
     {
@@ -124,25 +130,35 @@ void oledDrawPixel(uint8_t x, uint8_t y, OLED_COLOR color)
  * Font     => Font waarmee we gaan schrijven
  * color    => Black or White
  */
-char oledWriteChar(char ch, OLED_COLOR color)
+char oledWriteChar(char ch, oledColor color)
 {
     fontDef font = font_6x8;
     uint32_t i, b, j;
     
+    //set cursor in the begin of next line
+    if (ch == '\n' || ch == '\r')
+    {
+        oled.currentX = 0;
+        oled.currentY += (font.fontHeight + 2);
+        return ch;
+    }
+    
     // Check if character is valid
     if (ch < 32 || ch > 126)
+    {
         return 0;
+    }
     
     // Check remaining space on current line
-    if (OLED_HEIGHT < (OLED.currentY + font.fontHeight))
+    if (OLED_HEIGHT < (oled.currentY + font.fontHeight))
     {
         // Not enough space on current line
         return 0;
     }
-    else if (OLED_WIDTH < (OLED.currentX + font.fontWidth) && OLED_HEIGHT >= (OLED.currentY + font.fontHeight))
+    else if (OLED_WIDTH < (oled.currentX + font.fontWidth) && OLED_HEIGHT >= (oled.currentY + font.fontHeight))
     {
-        OLED.currentX = 0;
-        OLED.currentY += font.fontHeight;
+        oled.currentX = 0;
+        oled.currentY += font.fontHeight;
     }
     
     // Use the font to write
@@ -153,24 +169,24 @@ char oledWriteChar(char ch, OLED_COLOR color)
         {
             if((b << j) & 0x8000)  
             {
-                oledDrawPixel(OLED.currentX + j, (OLED.currentY + i), (OLED_COLOR) color);
+                oledDrawPixel(oled.currentX + j, (oled.currentY + i), (oledColor) color);
             } 
             else 
             {
-                oledDrawPixel(OLED.currentX + j, (OLED.currentY + i), (OLED_COLOR)!color);
+                oledDrawPixel(oled.currentX + j, (oled.currentY + i), (oledColor)!color);
             }
         }
     }
     
     // The current space is now taken
-    OLED.currentX += font.fontWidth;
+    oled.currentX += font.fontWidth;
     
     // Return written char for validation
     return ch;
 }
 
 /* Write full string to screenbuffer */
-char oledWriteString(char* str, OLED_COLOR color)
+char oledWriteString(char* str, oledColor color)
 {
     
     while (*str) 
@@ -190,8 +206,8 @@ char oledWriteString(char* str, OLED_COLOR color)
 /* Position the cursor */
 void oledSetCursor(uint8_t x, uint8_t y)
 {
-    OLED.currentX = x;
-    OLED.currentY = y;
+    oled.currentX = x;
+    oled.currentY = y;
 }
 
 void oledSetContrast(const uint8_t value) 
@@ -207,12 +223,32 @@ void oledSetDisplayOn(const uint8_t on)
     if (on)
     {
         value = 0xAF;   // Display on
-        OLED.displayOn = 1;
+        oled.displayOn = 1;
     } 
     else
     {
         value = 0xAE;   // Display off
-        OLED.displayOn = 0;
+        oled.displayOn = 0;
     }
     oledWriteCommand(value);
+}
+
+
+void oledTerminalInit(void)
+{
+    static terminalList oledWriteItem =
+    {
+        .name = "oledWriteString",
+        .desc = "reads data from terminal and sends this data to the oled",
+        .funcPtr = oledWriteStringFromPC,
+        .next = NULL
+    };
+    terminalListAddItem(&oledWriteItem);
+}
+
+void oledWriteStringFromPC(char** tokensArr)
+{
+    oledFill(black);
+    oledWriteString(tokensArr[1], white);
+    oledUpdateScreen();
 }

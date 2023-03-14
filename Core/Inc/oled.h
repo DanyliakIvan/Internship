@@ -121,7 +121,7 @@ typedef enum
 {
 	black = 0x00, // Black color, no pixel
 	white = 0x01  // Pixel is set. Color depends on OLED
-} OLED_COLOR;
+} oledColor;
 
 // Struct to store transformations
 typedef struct
@@ -130,7 +130,7 @@ typedef struct
 	uint16_t currentY;
 	uint8_t initialized;
 	uint8_t displayOn;
-} OLED_t;
+} OLED;
 
 typedef struct
 {
@@ -139,18 +139,20 @@ typedef struct
 	const uint16_t *data; /*!< Pointer to data font data array */
 } fontDef;
 
+//public function prototypes
 void oledWriteCommand(uint8_t byte);
 void oledWriteData(uint8_t* buffer, size_t bufSize);
 void oledInit(void);
-void oledFill(OLED_COLOR color);
+void oledFill(oledColor color);
 void oledUpdateScreen(void);
-void oledDrawPixel(uint8_t x, uint8_t y, OLED_COLOR color);
-char oledWriteChar(char ch, OLED_COLOR color);
-char oledWriteString(char* str, OLED_COLOR color);
+void oledDrawPixel(uint8_t x, uint8_t y, oledColor color);
+char oledWriteChar(char ch, oledColor color);
+char oledWriteString(char* str, oledColor color);
 void oledSetCursor(uint8_t x, uint8_t y);
 void oledSetContrast(const uint8_t value);
 void oledSetDisplayOn(const uint8_t on);
-static OLED_t OLED;
+static OLED oled;
+void oledTerminalInit(void);
 
 
 #endif /* __OLED_H__ */
